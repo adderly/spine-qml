@@ -30,6 +30,7 @@
 
 #include "spineplugin_plugin.h"
 #include "skeletonanimationfbo.h"
+#include "skeletonanimation2.h"
 #include <QUrl>
 #include <QtQml>
 #include "spineevent.h"
@@ -39,6 +40,11 @@ void SpinepluginPlugin::registerTypes(const char *uri)
     // @uri Spine
     Q_INIT_RESOURCE(resource);
 
+#ifdef TEST_NO_FBO
+    qmlRegisterType<SkeletonAnimation>(uri, 1, 0, "SkeletonAnimationFbo");
+#else
+    qmlRegisterType<SkeletonAnimationFbo>(uri, 1, 0, "SkeletonAnimationFbo");
+#endif
     qmlRegisterType<SpineEventData>(uri, 1, 0, "SpineEventData");
     qmlRegisterType<SpineEvent>(uri, 1, 0, "SpineEvent");
     qmlRegisterType<SkeletonAnimationFbo>(uri, 1, 0, "SkeletonAnimationFbo");

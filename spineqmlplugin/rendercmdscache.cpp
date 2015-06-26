@@ -376,6 +376,8 @@ void RenderCmdsCache::clear()
 void RenderCmdsCache::drawTriangles(QSGTexture* addTexture,const float* addVertices, const float* uvs, int addVerticesCount,
                        const int* addTriangles, int addTrianglesCount, const Color& color)
 {
+
+    if(!addTexture) return;
     if (addTexture != mTexture
             || mVerticesCount + (addVerticesCount >> 1) > mCapacity
             || mTrianglesCount + addTrianglesCount > mCapacity * 3) {
@@ -468,6 +470,8 @@ void RenderCmdsCache::render()
     Q_FOREACH (ICachedGLFunctionCall* func, mglFuncs) {
         func->invoke();
     }
+
+    glFuncs->glEnable(GL_DEPTH_TEST);
 }
 
 void RenderCmdsCache::setSkeletonRect(const QRectF &rect)

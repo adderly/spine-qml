@@ -6,6 +6,8 @@ ios: CONFIG += static
 !ios:TARGET = $$qtLibraryTarget($$TARGET)
 uri = Spine
 
+DEFINES += TEST_NO_FBO
+
 # Input
 SOURCES += \
     spineplugin_plugin.cpp \
@@ -13,7 +15,8 @@ SOURCES += \
     skeletonrenderer.cpp \
     rendercmdscache.cpp \
     skeletonanimationfbo.cpp \
-    spineevent.cpp
+    spineevent.cpp \
+    skeletonanimation2.cpp
 
 HEADERS += \
     spineplugin_plugin.h \
@@ -21,7 +24,9 @@ HEADERS += \
     skeletonrenderer.h \
     rendercmdscache.h \
     skeletonanimationfbo.h \
-    spineevent.h
+    spineevent.h \
+    skeletonanimation2.h \
+    funcs.h
 
 OTHER_FILES = qmldir
 

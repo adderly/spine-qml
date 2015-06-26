@@ -28,7 +28,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
-#include "skeletonanimationfbo.h"
+#include "skeletonanimation2.h"
 #include <QQuickWindow>
 #include <spine/extension.h>
 #include <QFile>
@@ -40,25 +40,24 @@
 
 #define SAFE_DELETE(p) {if(p) { delete (p); (p)=NULL;} }
 
-#ifndef UTIL_S
-#define UTIL_S 1
+#ifdef UTIL_S___
+//#define UTIL_S 1
 
-void _spAtlasPage_createTexture (spAtlasPage* self, const char* path) {
+ void _spAtlasPage_createTexture (spAtlasPage* self, const char* path) {
     Texture* texture = new Texture(path);
     self->rendererObject = texture;
     self->width = texture->size().width();
     self->height = texture->size().height();
 }
 
-void _spAtlasPage_disposeTexture (spAtlasPage* self) {
+ void _spAtlasPage_disposeTexture (spAtlasPage* self) {
     if (self->rendererObject){
         Texture* texture = (Texture*)self->rendererObject;
         self->rendererObject = 0;
         delete texture;
     }
 }
-
-char* _spUtil_readFile (const char* path, int* length) {
+ char* _spUtil_readFile (const char* path, int* length) {
     if (!path){
         qDebug()<<"_spUtil_readFile Error: Null path";
         return 0;
@@ -84,19 +83,22 @@ char* _spUtil_readFile (const char* path, int* length) {
     return bytes;
 }
 
-void animationCallback (spAnimationState* state, int trackIndex, spEventType type, spEvent* event, int loopCount) {
-    ((SkeletonAnimationFbo*)state->rendererObject)->onAnimationStateEvent(trackIndex, type, event, loopCount);
+ void animationCallback (spAnimationState* state, int trackIndex, spEventType type, spEvent* event, int loopCount) {
+    ((SkeletonAnimation*)state->rendererObject)->onAnimationStateEvent(trackIndex, type, event, loopCount);
 }
 
-void trackEntryCallback (spAnimationState* state, int trackIndex, spEventType type, spEvent* event, int loopCount) {
-    ((SkeletonAnimationFbo*)state->rendererObject)->onTrackEntryEvent(trackIndex, type, event, loopCount);
+ void trackEntryCallback (spAnimationState* state, int trackIndex, spEventType type, spEvent* event, int loopCount) {
+    ((SkeletonAnimation*)state->rendererObject)->onTrackEntryEvent(trackIndex, type, event, loopCount);
 }
+
 #endif
+
+extern void animationCallback (spAnimationState* state, int trackIndex, spEventType type, spEvent* event, int loopCount);
 
 static const int quadTriangles[6] = {0, 1, 2, 2, 3, 0};
 
-SkeletonAnimationFbo::SkeletonAnimationFbo(QQuickItem *parent)
-    :QQuickFramebufferObject(parent)
+SkeletonAnimation::SkeletonAnimation(QQuickItem *parent)
+    :QQuickItem(parent)
     ,mScale(1.0f)
     ,mSkin("default")
     ,mTimeScale(1.0f)
@@ -110,17 +112,17 @@ SkeletonAnimationFbo::SkeletonAnimationFbo(QQuickItem *parent)
     ,mspRootBone(0)
     ,mspAnimationState(0)
 {
-    this->setTextureFollowsItemSize(true);
+    //this->setTextureFollowsItemSize(true);
     mWorldVertices = new float[1000]; // Max number of vertices per mesh.
 }
 
-SkeletonAnimationFbo::~SkeletonAnimationFbo()
+SkeletonAnimation::~SkeletonAnimation()
 {
     releaseSkeletonRelatedData();
     delete[] mWorldVertices;
 }
 
-void SkeletonAnimationFbo::setToSetupPose()
+void SkeletonAnimation::setToSetupPose()
 {
     if (!isSkeletonValid()){
         qDebug()<<"SkeletonAnimation::setToSetupPose Error: Skeleton is not ready";
@@ -129,7 +131,7 @@ void SkeletonAnimationFbo::setToSetupPose()
     spSkeleton_setToSetupPose(mspSkeleton);
 }
 
-void SkeletonAnimationFbo::setBonesToSetupPose()
+void SkeletonAnimation::setBonesToSetupPose()
 {
     if (!isSkeletonValid()){
         qDebug()<<"SkeletonAnimation::setBonesToSetupPose Error: Skeleton is not ready";
@@ -138,7 +140,7 @@ void SkeletonAnimationFbo::setBonesToSetupPose()
     spSkeleton_setBonesToSetupPose(mspSkeleton);
 }
 
-void SkeletonAnimationFbo::setSlotsToSetupPose()
+void SkeletonAnimation::setSlotsToSetupPose()
 {
     if (!isSkeletonValid()){
         qDebug()<<"SkeletonAnimation::setSlotsToSetupPose Error: Skeleton is not ready";
@@ -147,7 +149,7 @@ void SkeletonAnimationFbo::setSlotsToSetupPose()
     spSkeleton_setSlotsToSetupPose(mspSkeleton);
 }
 
-bool SkeletonAnimationFbo::setAttachment(const QString &slotName, const QString &attachmentName)
+bool SkeletonAnimation::setAttachment(const QString &slotName, const QString &attachmentName)
 {
     if (!isSkeletonValid()){
         qDebug()<<"SkeletonAnimation::setAttachment Error: Skeleton is not ready";
@@ -162,7 +164,7 @@ bool SkeletonAnimationFbo::setAttachment(const QString &slotName, const QString 
     return res;
 }
 
-void SkeletonAnimationFbo::setMix(const QString &fromAnimation, const QString &toAnimation, float duration)
+void SkeletonAnimation::setMix(const QString &fromAnimation, const QString &toAnimation, float duration)
 {
     if (!isSkeletonValid()){
         qDebug()<<"SkeletonAnimation::setMix Error: Skeleton is not ready.";
@@ -172,7 +174,7 @@ void SkeletonAnimationFbo::setMix(const QString &fromAnimation, const QString &t
     spAnimationStateData_setMixByName(mspAnimationState->data, fromAnimation.toStdString().c_str(), toAnimation.toStdString().c_str(), duration);
 }
 
-void SkeletonAnimationFbo::setAnimation(int trackIndex, const QString& name, bool loop)
+void SkeletonAnimation::setAnimation(int trackIndex, const QString& name, bool loop)
 {
     if (!isSkeletonValid()){
         qDebug()<<"SkeletonAnimation::setAnimation Error: Skeleton is not ready";
@@ -187,7 +189,7 @@ void SkeletonAnimationFbo::setAnimation(int trackIndex, const QString& name, boo
     spAnimationState_setAnimation(mspAnimationState, trackIndex, animation, loop);
 }
 
-void SkeletonAnimationFbo::addAnimation(int trackIndex, const QString& name, bool loop, float delay)
+void SkeletonAnimation::addAnimation(int trackIndex, const QString& name, bool loop, float delay)
 {
     if (!isSkeletonValid()){
         qDebug()<<"SkeletonAnimation::addAnimation Error: Skeleton is not ready";
@@ -202,7 +204,7 @@ void SkeletonAnimationFbo::addAnimation(int trackIndex, const QString& name, boo
     spAnimationState_addAnimation(mspAnimationState, trackIndex, animation, loop, delay);
 }
 
-void SkeletonAnimationFbo::clearTracks()
+void SkeletonAnimation::clearTracks()
 {
     if (!isSkeletonValid()){
         qDebug()<<"SkeletonAnimation::clearTracks Error: Skeleton is not ready";
@@ -211,7 +213,7 @@ void SkeletonAnimationFbo::clearTracks()
     spAnimationState_clearTracks(mspAnimationState);
 }
 
-void SkeletonAnimationFbo::clearTrack(int trackIndex)
+void SkeletonAnimation::clearTrack(int trackIndex)
 {
     if (!isSkeletonValid()){
         qDebug()<<"SkeletonAnimation::clearTrack Error: Skeleton is not ready";
@@ -220,7 +222,7 @@ void SkeletonAnimationFbo::clearTrack(int trackIndex)
     spAnimationState_clearTrack(mspAnimationState, trackIndex);
 }
 
-void SkeletonAnimationFbo::setSkeletonDataFile(const QUrl & url)
+void SkeletonAnimation::setSkeletonDataFile(const QUrl & url)
 {
     if (mSkeletonDataFile == url)
         return;
@@ -232,7 +234,7 @@ void SkeletonAnimationFbo::setSkeletonDataFile(const QUrl & url)
     }
 }
 
-void SkeletonAnimationFbo::setAtlasFile(const QUrl & url)
+void SkeletonAnimation::setAtlasFile(const QUrl & url)
 {
     if (mAtlasFile == url)
         return;
@@ -244,7 +246,7 @@ void SkeletonAnimationFbo::setAtlasFile(const QUrl & url)
     }
 }
 
-void SkeletonAnimationFbo::setScale(float value)
+void SkeletonAnimation::setScale(float value)
 {
     if (mScale == value)
         return;
@@ -255,7 +257,7 @@ void SkeletonAnimationFbo::setScale(float value)
     }
 }
 
-void SkeletonAnimationFbo::setSkin(const QString & value)
+void SkeletonAnimation::setSkin(const QString & value)
 {
     if (mSkin == value)
         return;
@@ -269,7 +271,7 @@ void SkeletonAnimationFbo::setSkin(const QString & value)
     }
 }
 
-void SkeletonAnimationFbo::setTimeScale(float value)
+void SkeletonAnimation::setTimeScale(float value)
 {
     if (mTimeScale == value)
         return;
@@ -277,7 +279,7 @@ void SkeletonAnimationFbo::setTimeScale(float value)
     Q_EMIT timeScaleChanged();
 }
 
-void SkeletonAnimationFbo::setPremultipliedAlapha(bool value)
+void SkeletonAnimation::setPremultipliedAlapha(bool value)
 {
     if (mPremultipliedAlapha == value)
         return;
@@ -285,7 +287,7 @@ void SkeletonAnimationFbo::setPremultipliedAlapha(bool value)
     Q_EMIT premultipliedAlaphaChanged();
 }
 
-void SkeletonAnimationFbo::setDebugSlots(bool debug)
+void SkeletonAnimation::setDebugSlots(bool debug)
 {
     if (mDebugSlots == debug)
         return;
@@ -293,7 +295,7 @@ void SkeletonAnimationFbo::setDebugSlots(bool debug)
     Q_EMIT debugSlotsChanged();
 }
 
-void SkeletonAnimationFbo::setDebugBones(bool debug)
+void SkeletonAnimation::setDebugBones(bool debug)
 {
     if (mDebugBones == debug)
         return;
@@ -301,7 +303,7 @@ void SkeletonAnimationFbo::setDebugBones(bool debug)
     Q_EMIT debugBonesChanged();
 }
 
-void SkeletonAnimationFbo::setSourceSize(const QSize & size)
+void SkeletonAnimation::setSourceSize(const QSize & size)
 {
     if (mSourceSize == size)
         return;
@@ -309,12 +311,12 @@ void SkeletonAnimationFbo::setSourceSize(const QSize & size)
     Q_EMIT sourceSizeChanged();
 }
 
-QQuickFramebufferObject::Renderer *SkeletonAnimationFbo::createRenderer() const
-{
-    return new SkeletonRenderer;
-}
+//QQuickFramebufferObject::Renderer *SkeletonAnimation::createRenderer() const
+//{
+//    return new SkeletonRenderer;
+//}
 
-void SkeletonAnimationFbo::renderToCache(Renderer* renderer, RenderCmdsCache* cache)
+void SkeletonAnimation::renderToCache(void* renderer, RenderCmdsCache* cache)
 {
     if (!cache)
         return;
@@ -409,6 +411,7 @@ void SkeletonAnimationFbo::renderToCache(Renderer* renderer, RenderCmdsCache* ca
             color.g = mspSkeleton->g * slot->g * g * multiplier;
             color.b = mspSkeleton->b * slot->b * b * multiplier;
             cache->drawTriangles(skeletonRenderer->getGLTexture(texture, window()), mWorldVertices, uvs, verticesCount, triangles, trianglesCount, color);
+//            cache->drawTriangles(renderer, mWorldVertices, uvs, verticesCount, triangles, trianglesCount, color);
         }// END if (texture)
     }// END for (int i = 0, n = skeleton->slotsCount; i < n; i++)
     cache->cacheTriangleDrawCall();
@@ -456,7 +459,7 @@ void SkeletonAnimationFbo::renderToCache(Renderer* renderer, RenderCmdsCache* ca
     }//END if (mDebugSlots || mDebugBones)
 }
 
-void SkeletonAnimationFbo::onAnimationStateEvent(int trackIndex, spEventType type, spEvent *event, int loopCount)
+void SkeletonAnimation::onAnimationStateEvent(int trackIndex, spEventType type, spEvent *event, int loopCount)
 {
     switch (type) {
     case SP_ANIMATION_START:
@@ -479,11 +482,11 @@ void SkeletonAnimationFbo::onAnimationStateEvent(int trackIndex, spEventType typ
     }
 }
 
-void SkeletonAnimationFbo::onTrackEntryEvent(int /*trackIndex*/, spEventType /*type*/, spEvent* /*event*/, int /*loopCount*/)
+void SkeletonAnimation::onTrackEntryEvent(int /*trackIndex*/, spEventType /*type*/, spEvent* /*event*/, int /*loopCount*/)
 {
 }
 
-void SkeletonAnimationFbo::updateSkeletonAnimation()
+void SkeletonAnimation::updateSkeletonAnimation()
 {
     if (!isSkeletonValid()) {
         update();
@@ -515,7 +518,7 @@ void SkeletonAnimationFbo::updateSkeletonAnimation()
     update();
 }
 
-void SkeletonAnimationFbo::loadSkeletonAndAtlasData()
+void SkeletonAnimation::loadSkeletonAndAtlasData()
 {
     releaseSkeletonRelatedData();
 
@@ -564,7 +567,7 @@ void SkeletonAnimationFbo::loadSkeletonAndAtlasData()
     mTimer.invalidate();
 }
 
-QRectF SkeletonAnimationFbo::calculateSkeletonRect()
+QRectF SkeletonAnimation::calculateSkeletonRect()
 {
     if (!isSkeletonValid())
         return QRectF();
@@ -604,27 +607,27 @@ QRectF SkeletonAnimationFbo::calculateSkeletonRect()
     return rect;
 }
 
-Texture *SkeletonAnimationFbo::getTexture(spRegionAttachment *attachment) const
+Texture *SkeletonAnimation::getTexture(spRegionAttachment *attachment) const
 {
     return (Texture*)((spAtlasRegion*)attachment->rendererObject)->page->rendererObject;
 }
 
-Texture *SkeletonAnimationFbo::getTexture(spMeshAttachment *attachment) const
+Texture *SkeletonAnimation::getTexture(spMeshAttachment *attachment) const
 {
     return (Texture*)((spAtlasRegion*)attachment->rendererObject)->page->rendererObject;
 }
 
-Texture *SkeletonAnimationFbo::getTexture(spSkinnedMeshAttachment *attachment) const
+Texture *SkeletonAnimation::getTexture(spSkinnedMeshAttachment *attachment) const
 {
     return (Texture*)((spAtlasRegion*)attachment->rendererObject)->page->rendererObject;
 }
 
-bool SkeletonAnimationFbo::isSkeletonValid()
+bool SkeletonAnimation::isSkeletonValid()
 {
     return mSkeletonLoaded && mspSkeleton && mspAnimationState;
 }
 
-void SkeletonAnimationFbo::releaseSkeletonRelatedData()
+void SkeletonAnimation::releaseSkeletonRelatedData()
 {
     if (mspAnimationState){
         spAnimationStateData_dispose(mspAnimationState->data);
@@ -649,7 +652,7 @@ void SkeletonAnimationFbo::releaseSkeletonRelatedData()
     mShouldRelaseCacheTexture = true;
 }
 
-void SkeletonAnimationFbo::componentComplete()
+void SkeletonAnimation::componentComplete()
 {
     QQuickItem::componentComplete();
     loadSkeletonAndAtlasData();

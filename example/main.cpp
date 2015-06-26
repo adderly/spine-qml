@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QStandardPaths>
 
-#ifdef Q_OS_IOS
+#if defined(Q_OS_IOS) || defined(Q_OS_LINUX)
 #include <spineplugin_plugin.h>
 #endif
 
@@ -19,6 +19,9 @@ int main(int argc, char *argv[])
 #elif defined(Q_OS_OSX)
     engine.addImportPath(QCoreApplication::applicationDirPath()+"/../Resources/");
 #elif defined(Q_OS_IOS)
+    SpinepluginPlugin plugin;
+    plugin.registerTypes("Spine");
+#elif defined(Q_OS_LINUX)
     SpinepluginPlugin plugin;
     plugin.registerTypes("Spine");
 #elif defined(Q_OS_WIN32)

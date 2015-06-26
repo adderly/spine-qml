@@ -14,6 +14,11 @@ ios{
     LIBS += -L$$OUT_PWD/../spine-c/ -lspine-c
     INCLUDEPATH += $$PWD/../spineqmlplugin/
 }
+linux{
+    LIBS += -L$$OUT_PWD/../spineqmlplugin/Spine -lspineplugin
+    LIBS += -L$$OUT_PWD/../spine-c/ -lspine-c
+    INCLUDEPATH += $$PWD/../spineqmlplugin/
+}
 else{
     spine_folder.source = $$OUT_PWD/../spineqmlplugin/Spine
     spine_folder.target = .

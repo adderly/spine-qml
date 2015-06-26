@@ -67,3 +67,6 @@ HEADERS += \
     include/spine/IkConstraint.h \
     include/spine/IkConstraintData.h
 
+DISTFILES += \
+    spine-c.pri
+
